@@ -60,15 +60,16 @@ if init_args.config:
     if isfile(init_args.config):
         cfile = init_args.config
     else:
-        logger.error('Config file doesn''t exist: {0}'.format(init_args.config))
+        logger.error('Config file doesn\'t exist: {0}'.format(init_args.config))
         exit(1)
 elif isfile(expanduser('~/.etcd-cli.conf')):
     cfile = expanduser('~/.etcd-cli.conf')
 elif isfile('/etc/etcd-cli/etcd-cli.conf'):
     cfile = '/etc/etcd-cli/etcd-cli.conf'
 
-logger.info("Using config file: {0}".format(cfile))
-config.read(cfile)
+if cfile and isfile(cfile):
+    logger.info("Loading config file: {0}".format(cfile))
+    config.read(cfile)
 
 # Load schema
 schemas = {}
