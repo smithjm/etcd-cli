@@ -1,0 +1,34 @@
+host:
+  primary: hostname
+  hostname:
+    type: string
+    regex: ^[a-z]([a-z0-9-]+\.)+[a-z0-9-]+[a-z]+$
+    description: Fully qualified hostname
+  interface:
+    type: string
+    regex: ^[a-z]+[0-9]+$
+    description: Default interface
+    default: eth0
+    short: I
+  hwaddr:
+    type: string
+    regex: ^([0-9a-f]{2}:){4}[0-9a-f]{2}$
+    description: Hardware address
+  ip:
+    type: string
+    regex: ^([0-9]+\.){3}[0-9]+)$
+    description: IP address
+  netmask:
+    type: string
+    regex: ^([0-9]+\.){3}[0-9]+)$
+    description: Netmask
+    short: n
+  gw:
+    type: string
+    regex: ^([0-9]+\.){3}[0-9]+)$
+    description: Gateway
+  site:
+    type: string
+    regex: ^[a-z]{4}$
+    description: Site
+    short: s
