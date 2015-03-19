@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# Fix defaults for Boolean action needs to be altered
+
 import yaml
 import argparse
 import ConfigParser
@@ -10,12 +12,22 @@ import etcd
 import etcd.client
 import glob
 import jinja2
+import re
 
 def create_dir(path):
     try:
         c.directory.create(path)
     except etcd.exceptions.EtcdAlreadyExistsException:
         pass
+
+_regex = None
+
+def argparse_regex(val):
+    print "regex: {0}, val: {1}".format(_regex, val)
+    try:
+        return re.match(_regex, val).group(0)
+    except:
+        raise argparse.ArgumentTypeError("String '{0}' does not match regex '{1}'".format(val, _regex))
 
 # Get arguments
 parser = argparse.ArgumentParser(add_help=False)
@@ -92,79 +104,74 @@ parser.add_argument('-y', '--yes', action='store_true', help='Answer yes to all 
 subparser = parser.add_subparsers(dest = 'action')
 
 parsers = {}
-for action in  [ 'get', 'add', 'modify', 'delete', 'list' ]:
+for action in  [ 'set' ]:
 
     parsers[action, 'first'] = subparser.add_parser(action)
     parsers[action, 'second'] = parsers[action, 'first'].add_subparsers(dest = 'resource')
     for resource in resources:
         parsers[action, resource] = parsers[action, 'second'].add_parser(resource)
 
-        if not 'primary' in schemas[resource]:
-            logger.error("Schema: %s needs to declare a primary key" % resource)
-            exit(1)
-        key = schemas[resource]['primary']
-
-        required_fields = [ key ]
-        if 'required' in schemas[resource]:
-            required_fields = schemas[resource]['required']
-
         if action == 'list':
-            parsers[action, resource].add_argument('--format', choices = ['text', 'table', 'csv', 'json', 'yaml'], default = 'text', help = 'Print format')
-            parsers[action, resource].add_argument('--fields', help = 'Fields to print, ignored by JSON or YAML')
-
-        elif action == 'get':
-            descr = schemas[resource][key]['description']
-            parsers[action, resource].add_argument(key, help = descr)
-            parsers[action, resource].add_argument('--format', choices = ['text', 'table', 'csv', 'json', 'yaml'], default = 'text', help = 'Print format')
-            parsers[action, resource].add_argument('--fields', help = 'Fields to print, ignored by JSON or YAML')
-
+            continue
         elif action == 'delete':
-            descr = schemas[resource][key]['description']
-            parsers[action, resource].add_argument(key, help = descr)
-
+            continue
         else:
             for entry in schemas[resource].keys():
-                if entry == 'primary':
-                    continue
-
-                ftype = None
+                etype = None
                 if not 'type' in schemas[resource][entry]:
                     logger.error("Schema: %s entry: %s needs to declare a type" % (resource, entry))
                     exit(1)
-                ftype = schemas[resource][entry]['type']
+                etype = schemas[resource][entry]['type']
 
-                if ftype != 'array' and ftype != 'string' and ftype != 'boolean':
-                    logger.error("Schema: %s entry: %s has an unsupported type: %s for this CLI" % (resource, entry, ftype))
+                if etype != 'string' and etype != 'boolean':
+                    logger.error("Schema: %s entry: %s has an unsupported type: %s for this CLI" % (resource, entry, etype))
                     exit(1)
 
+                # Boolean
+                eaction = 'store'
+                if etype == 'boolean':
+                    eaction = 'store_true'
+
+                # Description
                 descr = None
                 if 'description' in schemas[resource][entry]:
                     descr = schemas[resource][entry]['description']
 
-                if entry == key:
-                    parsers[action, resource].add_argument(key, help = descr)
-                    continue
-
-                arguments = [ '--%s' % entry ]
+                # Short name
+                short = None
                 if 'short' in schemas[resource][entry]:
-                    arguments = [ '-{0}'.format(schemas[resource][entry]['short']), '--{0}'.format(entry) ]
+                    short = '-{0}'.format(schemas[resource][entry]['short'])
 
+                # Long name
+                elong = '--{0}'.format(entry)
+
+                # Regex
+                _regex = None
+                if 'regex' in schemas[resource][entry]:
+                    _regex = schemas[resource][entry]['regex']
+
+                # Allowed values
                 choices = None
-#                if action != 'modify' and 'enum' in schemas[resource]['schema'][entry]:
-#                    choices = schemas[resource]['schema'][entry]['enum']
+                if 'allowed' in schemas[resource][entry]:
+                    choices = schemas[resource][entry]['allowed']
 
+                # Required argument
                 required = False
-                if action != 'modify' and entry in required_fields:
-                    required = True
+                if 'required' in schemas[resource][entry]:
+                    required = schemas[resource][entry]['required']
 
+                # Default
                 default = None
                 if action != 'modify' and 'default' in schemas[resource][entry]:
                     default = schemas[resource][entry]['default']
+                    descr += ', defaults to: {0}'.format(default)
 
-                if len(arguments) > 1:
-                    parsers[action, resource].add_argument(arguments[0], arguments[1], choices = choices, required = required, default = default, help = descr)
+                if short:
+                    parsers[action, resource].add_argument(short, elong, action=eaction, required=required, default=default, help=descr)
                 else:
-                    parsers[action, resource].add_argument(arguments[0], choices = choices, required = required, default = default, help = descr)
+                    parsers[action, resource].add_argument(elong, action=eaction, required=required, default=default, help=descr)
+
+#                        parsers[action, resource].add_argument(elong, type=argparse_regex, required=required, default=default, help=descr)
 
 args = parser.parse_args()
 arglist = vars(args)
@@ -181,23 +188,31 @@ else:
 
 c = etcd.client.Client(host=config.get('main', 'node'), port=config.get('main', 'port'), is_ssl=False)
 
-if args.action == 'add':
+if args.action == 'set':
     template = jinja2.Template(open(fn).read())
     try:
-        result = template.render(arglist)
+        jinja_res = template.render(arglist)
     except Exception, e:
         logger.error('Failed to parse JINJA in template: {0}\n{1}'.format(fn, e))
+        exit(1)
+
+    try:
+        yaml_res = yaml.load(jinja_res)
+    except Exception, e:
+        print jinja_res
+        logger.critical('Failed to parse YAML from template: {0}'.format(e))
+        exit(1)
 
     # Accept input
     if not args.yes:
-        print 'Adding:\n{0}\n'.format(result)
+        print 'Set:\n\n{0}\n'.format(yaml.dump(yaml_res, default_flow_style=False))
         answer = raw_input('Do you want to proceed: [y/n]? ')
         if answer and answer[0].lower() != 'y':
             exit(1)
 
-    for line in result.splitlines():
-        path, val = line.rsplit(':', 1)
-        dir, key = path.rsplit('/', 1)
-        logger.info('Set: {0}/{1}: {2}'.format(dir.strip(), key.strip(), val.strip()))
-        create_dir(dir.strip())
-        c.node.set(path.strip(), val)
+    for key, val in yaml_res.items():
+        kdir, name = key.rsplit('/', 1)
+        logger.debug('Create directory: {0}'.format(kdir))
+        create_dir(kdir)
+        logger.debug('Set key: {0}'.format(key))
+        c.node.set(key, val)

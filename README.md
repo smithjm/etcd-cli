@@ -18,6 +18,7 @@ There are examples schema/template in resp. folders.
 - Clean up YAML input schemas
 - Add input without positional argument
 - Parse template as YAML after JINJA
+- Add JINJA templating to YAML input
 
 # Examples
 
