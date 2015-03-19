@@ -1,0 +1,4 @@
+*.pyc
+build/
+dist/
+etcd_cli.egg-info/

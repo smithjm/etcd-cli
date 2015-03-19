@@ -37,8 +37,8 @@ setup(
     packages         = find_packages(),
     classifiers      = CLASSIFIERS,
     scripts          = ['scripts/etcd-cli'],
-    data_files	     = [('/etc/etcd-cli', ['etc/etcd-cli/etcd-cli.conf']),
+    data_files	     = [('/etc/etcd-cli', ['etc/etcd-cli.conf']),
                         ('/etc/etcd-cli/schemas', glob.glob('schemas/*.yaml')),
-                        ('/etc/etcd-cli/templates', glob.glob('templates/*.jinja')),
+                        ('/etc/etcd-cli/templates', glob.glob('templates/*.jinja'))],
     install_requires = requires,
 )
