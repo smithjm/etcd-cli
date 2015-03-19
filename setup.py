@@ -24,9 +24,9 @@ CLASSIFIERS = [
 
 setup(
     name             = 'etcd-cli',
-    version          = '0.1-2',
+    version          = '0.1-4',
 
-    description      = 'etcd-cli CLI for Etcd based on schemas per directory',
+    description      = 'etcd-cli CLI for Etcd based on schemas',
     long_description = open("README.rst").read(),
 
     author           = 'Michael Persson',
@@ -38,7 +38,7 @@ setup(
     classifiers      = CLASSIFIERS,
     scripts          = ['scripts/etcd-cli'],
     data_files	     = [('/etc/etcd-cli', ['etc/etcd-cli.conf']),
-                        ('/etc/etcd-cli/schemas', glob.glob('schemas/*.yaml')),
-                        ('/etc/etcd-cli/templates', glob.glob('templates/*.jinja'))],
+                        ('/etc/etcd-cli/schemas', glob.glob('etc/schemas/*.yaml')),
+                        ('/etc/etcd-cli/templates', glob.glob('etc/templates/*.jinja'))],
     install_requires = requires,
 )

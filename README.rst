@@ -1,4 +1,4 @@
-etcd-cli CLI for Etcd based on schemas per directory
+etcd-cli CLI for Etcd based on schemas
 
 Install
 =======
