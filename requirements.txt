@@ -4,3 +4,4 @@ ConfigParser
 logging
 etcd
 jinja2
+simplejson
