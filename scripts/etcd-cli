@@ -65,8 +65,8 @@ config.set('main', 'templates', '/etc/etcd-cli/templates')
 # Load config
 cfile = None
 if init_args.config:
-    if isfile(init_args.config):
-        cfile = init_args.config
+    if isfile(expanduser(init_args.config)):
+        cfile = expanduser(init_args.config)
     else:
         logger.error('Config file doesn\'t exist: {0}'.format(init_args.config))
         exit(1)
@@ -80,8 +80,11 @@ if cfile and isfile(cfile):
     config.read(cfile)
 
 # Load schema
+sdir = expanduser(config.get('main', 'schemas'))
+logger.info('Using schema dir: {0}'.format(sdir))
 schemas = {}
-for fn in glob.glob(config.get('main', 'schemas') + '/*.yaml'):
+for fn in glob.glob(sdir + '/*.yaml'):
+    logger.info("Load schema file: {0}".format(fn))
     content = open(fn).read()
     try:
         schemas.update(yaml.load(content))
@@ -181,7 +184,7 @@ for key in schemas[args.resource].keys():
             exit(1)
 
 # Load template
-fn = config.get('main', 'templates') + '/{0}.jinja'.format(args.resource)
+fn = expanduser(config.get('main', 'templates')) + '/{0}.jinja'.format(args.resource)
 template = None
 if isfile(fn):
     logger.info("Loading template: {0}".format(fn))
