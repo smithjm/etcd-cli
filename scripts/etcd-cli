@@ -58,8 +58,8 @@ config = ConfigParser.ConfigParser()
 config.add_section('main')
 config.set('main', 'node', 'etcd')
 config.set('main', 'port', '4001')
-config.set('main', 'schemas', 'schemas')
-config.set('main', 'templates', 'templates')
+config.set('main', 'schemas', '/etc/etcd-cli/schemas')
+config.set('main', 'templates', '/etc/etcd-cli/templates')
 
 # Load config
 cfile = None
