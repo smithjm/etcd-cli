@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# Fix defaults for Boolean action needs to be altered
-
 import yaml
 import argparse
 import ConfigParser
@@ -20,10 +18,7 @@ def create_dir(path):
     except etcd.exceptions.EtcdAlreadyExistsException:
         pass
 
-_regex = None
-
-def argparse_regex(val):
-    print "regex: {0}, val: {1}".format(_regex, val)
+def regex_val(val, regex):
     try:
         return re.match(_regex, val).group(0)
     except:
@@ -162,7 +157,7 @@ for action in  [ 'set' ]:
 
                 # Default
                 default = None
-                if action != 'modify' and 'default' in schemas[resource][entry]:
+                if 'default' in schemas[resource][entry]:
                     default = schemas[resource][entry]['default']
                     descr += ', defaults to: {0}'.format(default)
 
@@ -171,10 +166,18 @@ for action in  [ 'set' ]:
                 else:
                     parsers[action, resource].add_argument(elong, action=eaction, required=required, default=default, help=descr)
 
-#                        parsers[action, resource].add_argument(elong, type=argparse_regex, required=required, default=default, help=descr)
-
 args = parser.parse_args()
 arglist = vars(args)
+
+# Validate values using regex
+for key in schemas[args.resource].keys():
+    if 'regex' in schemas[args.resource][key]:
+        rx = schemas[args.resource][key]['regex']
+        val = arglist[key]
+        logger.info("Validate key '{0}' with regex '{1}'".format(key, rx))
+        if not re.match(rx, val):
+            logger.critical("String '{0}' does not match regex '{1}'".format(val, rx))
+            exit(1)
 
 # Load template
 fn = config.get('main', 'templates') + '/{0}.jinja'.format(args.resource)
