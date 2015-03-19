@@ -11,6 +11,7 @@ import etcd.client
 import glob
 import jinja2
 import re
+import socket
 
 def create_dir(path):
     try:
@@ -189,7 +190,7 @@ else:
     logger.error('Missing template file: {0}'.format(fn))
     exit(1)
 
-c = etcd.client.Client(host=config.get('main', 'node'), port=config.get('main', 'port'), is_ssl=False)
+c = etcd.client.Client(host=socket.gethostbyname(config.get('main', 'node')), port=config.get('main', 'port'), is_ssl=False)
 
 if args.action == 'set':
     template = jinja2.Template(open(fn).read())

@@ -18,18 +18,18 @@ host:
   ip:
     type: string
     required: true
-    regex: ^([0-9]+\.){3}[0-9]+)$
+    regex: ^([0-9]+\.){3}[0-9]+$
     description: IP address
   netmask:
     type: string
     required: true
-    regex: ^([0-9]+\.){3}[0-9]+)$
+    regex: ^([0-9]+\.){3}[0-9]+$
     description: Netmask
     short: n
   gw:
     type: string
     required: true
-    regex: ^([0-9]+\.){3}[0-9]+)$
+    regex: ^([0-9]+\.){3}[0-9]+$
     description: Gateway
   site:
     type: string
