@@ -229,9 +229,12 @@ if args.action == 'set':
 
 if args.action == 'get':
     for key in yaml_res[args.action]:
-        r = c.node.get(key)
-#        print r
-        print '{0}: {1}'.format(key, r.node.value)
+        try:
+            r = c.node.get(key)
+            print '{0}: {1}'.format(key, r.node.value)
+        except:
+            logger.warning('Failed to get key \'{0}\''.format(key))
+            pass
 
 if args.action == 'delete':
     for key in yaml_res[args.action]:
