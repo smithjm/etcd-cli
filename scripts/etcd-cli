@@ -8,6 +8,7 @@ import os
 from os.path import isfile, expanduser
 import etcd
 import etcd.client
+import etcd
 import glob
 import jinja2
 import re
@@ -103,24 +104,20 @@ parser.add_argument('-y', '--yes', action='store_true', help='Answer yes to all 
 subparser = parser.add_subparsers(dest = 'action')
 
 parsers = {}
-for action in  [ 'set' ]:
+for action in [ 'set', 'get', 'delete' ]:
 
     parsers[action, 'first'] = subparser.add_parser(action)
     parsers[action, 'second'] = parsers[action, 'first'].add_subparsers(dest = 'resource')
     for resource in resources:
         parsers[action, resource] = parsers[action, 'second'].add_parser(resource)
 
-        if action == 'list':
-            continue
-        elif action == 'delete':
-            continue
-        else:
-            for entry in schemas[resource].keys():
+        if action in schemas[resource]:
+            for entry in schemas[resource][action].keys():
                 etype = None
-                if not 'type' in schemas[resource][entry]:
+                if not 'type' in schemas[resource][action][entry]:
                     logger.error("Schema: %s entry: %s needs to declare a type" % (resource, entry))
                     exit(1)
-                etype = schemas[resource][entry]['type']
+                etype = schemas[resource][action][entry]['type']
 
                 if etype != 'string' and etype != 'boolean':
                     logger.error("Schema: %s entry: %s has an unsupported type: %s for this CLI" % (resource, entry, etype))
@@ -133,36 +130,36 @@ for action in  [ 'set' ]:
 
                 # Description
                 descr = None
-                if 'description' in schemas[resource][entry]:
-                    descr = schemas[resource][entry]['description']
+                if 'description' in schemas[resource][action][entry]:
+                    descr = schemas[resource][action][entry]['description']
 
                 # Short name
                 short = None
-                if 'short' in schemas[resource][entry]:
-                    short = '-{0}'.format(schemas[resource][entry]['short'])
+                if 'short' in schemas[resource][action][entry]:
+                    short = '-{0}'.format(schemas[resource][action][entry]['short'])
 
                 # Long name
                 elong = '--{0}'.format(entry)
 
                 # Regex
                 _regex = None
-                if 'regex' in schemas[resource][entry]:
-                    _regex = schemas[resource][entry]['regex']
+                if 'regex' in schemas[resource][action][entry]:
+                    _regex = schemas[resource][action][entry]['regex']
 
                 # Allowed values
                 choices = None
-                if 'allowed' in schemas[resource][entry]:
-                    choices = schemas[resource][entry]['allowed']
+                if 'allowed' in schemas[resource][action][entry]:
+                    choices = schemas[resource][action][entry]['allowed']
 
                 # Required argument
                 required = False
-                if 'required' in schemas[resource][entry]:
-                    required = schemas[resource][entry]['required']
+                if 'required' in schemas[resource][action][entry]:
+                    required = schemas[resource][action][entry]['required']
 
                 # Default
                 default = None
-                if 'default' in schemas[resource][entry]:
-                    default = schemas[resource][entry]['default']
+                if 'default' in schemas[resource][action][entry]:
+                    default = schemas[resource][action][entry]['default']
                     descr += ', defaults to: {0}'.format(default)
 
                 if short:
@@ -174,9 +171,9 @@ args = parser.parse_args()
 arglist = vars(args)
 
 # Validate values using regex
-for key in schemas[args.resource].keys():
-    if 'regex' in schemas[args.resource][key]:
-        rx = schemas[args.resource][key]['regex']
+for key in schemas[args.resource][args.action].keys():
+    if 'regex' in schemas[args.resource][args.action][key]:
+        rx = schemas[args.resource][args.action][key]['regex']
         val = arglist[key]
         logger.info("Validate key '{0}' with regex '{1}'".format(key, rx))
         if not re.match(rx, val):
@@ -193,33 +190,49 @@ else:
     logger.error('Missing template file: {0}'.format(fn))
     exit(1)
 
-c = etcd.client.Client(host=socket.gethostbyname(config.get('main', 'node')), port=config.get('main', 'port'), is_ssl=False)
+# Parse JINJA
+template = jinja2.Template(open(fn).read())
+try:
+    jinja_res = template.render(arglist)
+except Exception, e:
+    logger.error('Failed to parse JINJA in template: {0}\n{1}'.format(fn, e))
+    exit(1)
 
-if args.action == 'set':
-    template = jinja2.Template(open(fn).read())
-    try:
-        jinja_res = template.render(arglist)
-    except Exception, e:
-        logger.error('Failed to parse JINJA in template: {0}\n{1}'.format(fn, e))
-        exit(1)
+# Parse YAML
+try:
+    yaml_res = yaml.load(jinja_res)
+except Exception, e:
+    print jinja_res
+    logger.critical('Failed to parse YAML from template: {0}'.format(e))
+    exit(1)
 
-    try:
-        yaml_res = yaml.load(jinja_res)
-    except Exception, e:
-        print jinja_res
-        logger.critical('Failed to parse YAML from template: {0}'.format(e))
-        exit(1)
-
-    # Accept input
-    if not args.yes:
-        print 'Set:\n\n{0}\n'.format(yaml.dump(yaml_res, default_flow_style=False))
+# Accept input
+if not args.yes:
+    print '{0}:\n\n{1}\n'.format(args.action, yaml.dump(yaml_res[args.action], default_flow_style=False))
+    if args.action != 'get':
         answer = raw_input('Do you want to proceed: [y/n]? ')
         if answer and answer[0].lower() != 'y':
             exit(1)
 
-    for key, val in yaml_res.items():
+# Connect to etcd
+c = etcd.client.Client(host=socket.gethostbyname(config.get('main', 'node')), port=config.get('main', 'port'), is_ssl=False)
+
+if args.action == 'set':
+    for key, val in yaml_res[args.action].items():
         kdir, name = key.rsplit('/', 1)
         logger.debug('Create directory: {0}'.format(kdir))
         create_dir(kdir)
         logger.debug('Set key: {0}'.format(key))
         c.node.set(key, val)
+
+if args.action == 'get':
+    for key in yaml_res[args.action]:
+        r = c.node.get(key)
+#        print r
+        print '{0}: {1}'.format(key, r.node.value)
+
+if args.action == 'delete':
+    for key in yaml_res[args.action]:
+        logger.info('Delete key: {0}'.format(key))
+        r = c.directory.delete_recursive(key)
+ #       print r

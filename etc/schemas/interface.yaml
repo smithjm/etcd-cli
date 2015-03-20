@@ -1,34 +1,56 @@
 interface:
-  interface:
-    type: string
-    regex: ^[a-z]+[0-9]+$
-    description: Interface
-    default: eth0
-    short: I
-  hostname:
-    type: string
-    required: true
-    regex: ^[a-z]([a-z0-9-]+\.)+[a-z0-9-]+[a-z]+$
-    description: Fully qualified hostname
-  hwaddr:
-    type: string
-    required: true
-    regex: ^([0-9a-f]{2}:){4}[0-9a-f]{2}$
-    description: Hardware address
-    short: hw
-  ip:
-    type: string
-    required: true
-    regex: ^([0-9]+\.){3}[0-9]+$
-    description: IP address
-  netmask:
-    type: string
-    required: true
-    regex: ^([0-9]+\.){3}[0-9]+$
-    description: Netmask
-    short: n
-  gw:
-    type: string
-    required: true
-    regex: ^([0-9]+\.){3}[0-9]+$
-    description: Gateway
+  list:
+    interface:
+      type: string
+      regex: ^[a-z]+[0-9]+$
+      description: Interface
+      default: eth0
+      short: I
+  delete:
+    interface:
+      type: string
+      regex: ^[a-z]+[0-9]+$
+      description: Interface
+      default: eth0
+      short: I
+  get:
+    interface:
+      type: string
+      regex: ^[a-z]+[0-9]+$
+      description: Interface
+      default: eth0
+      short: I
+  set:
+      interface:
+        type: string
+        regex: ^[a-z]+[0-9]+$
+        description: Interface
+        default: eth0
+        short: I
+      hostname:
+        type: string
+        required: true
+        regex: ^[a-z]([a-z0-9-]+\.)+[a-z0-9-]+[a-z]+$
+        description: Fully qualified hostname
+      hwaddr:
+        type: string
+        required: true
+        regex: ^([0-9a-f]{2}:){4}[0-9a-f]{2}$
+        description: Hardware address
+        short: hw
+      ip:
+        type: string
+        required: true
+        regex: ^([0-9]+\.){3}[0-9]+$
+        description: IP address
+      netmask:
+        type: string
+        required: true
+        regex: ^([0-9]+\.){3}[0-9]+$
+        description: Netmask
+        short: n
+      gw:
+        type: string
+        required: true
+        regex: ^([0-9]+\.){3}[0-9]+$
+        description: Gateway

@@ -1,7 +1,18 @@
-/host/{{ hostname }}/site: {{ site }}
-/host/{{ hostname }}/{{ interface }}/ip: {{ ip }}
-/host/{{ hostname }}/{{ interface }}/hwaddr: {{ hwaddr }}
-/host/{{ hostname }}/{{ interface }}/netmask: {{ netmask }}
-/host/{{ hostname }}/{{ interface }}/gw: {{ gw }}
-/hwaddr/{{ hwaddr }}/interface: {{ interface }}
-/hwaddr/{{ hwaddr }}/hostname: {{ hostname }}
+list:
+- /host/{{ hostname }}
+delete:
+- /host/{{ hostname }}
+get:
+- /host/{{ hostname }}/site
+- /host/{{ hostname }}/{{ interface }}/ip
+- /host/{{ hostname }}/{{ interface }}/hwaddr
+- /host/{{ hostname }}/{{ interface }}/netmask
+- /host/{{ hostname }}/{{ interface }}/gw
+set:
+  /host/{{ hostname }}/site: {{ site }}
+  /host/{{ hostname }}/{{ interface }}/ip: {{ ip }}
+  /host/{{ hostname }}/{{ interface }}/hwaddr: {{ hwaddr }}
+  /host/{{ hostname }}/{{ interface }}/netmask: {{ netmask }}
+  /host/{{ hostname }}/{{ interface }}/gw: {{ gw }}
+  /hwaddr/{{ hwaddr }}/interface: {{ interface }}
+  /hwaddr/{{ hwaddr }}/hostname: {{ hostname }}
