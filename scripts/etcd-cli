@@ -173,14 +173,15 @@ args = parser.parse_args()
 arglist = vars(args)
 
 # Validate values using regex
-for key in schemas[args.resource][args.action].keys():
-    if 'regex' in schemas[args.resource][args.action][key]:
-        rx = schemas[args.resource][args.action][key]['regex']
-        val = arglist[key]
-        logger.info("Validate key '{0}' with regex '{1}'".format(key, rx))
-        if not re.match(rx, val):
-            logger.critical("String '{0}' does not match regex '{1}'".format(val, rx))
-            exit(1)
+if schemas[args.resource][args.action]:
+    for key in schemas[args.resource][args.action].keys():
+        if 'regex' in schemas[args.resource][args.action][key]:
+            rx = schemas[args.resource][args.action][key]['regex']
+            val = arglist[key]
+            logger.info("Validate key '{0}' with regex '{1}'".format(key, rx))
+            if not re.match(rx, val):
+                logger.critical("String '{0}' does not match regex '{1}'".format(val, rx))
+                exit(1)
 
 # Load template
 fn = expanduser(config.get('main', 'templates')) + '/{0}.jinja'.format(args.resource)
