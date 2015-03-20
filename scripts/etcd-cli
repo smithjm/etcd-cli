@@ -112,6 +112,8 @@ for action in [ 'set', 'get', 'delete' ]:
         parsers[action, resource] = parsers[action, 'second'].add_parser(resource)
 
         if action in schemas[resource]:
+            if not schemas[resource][action]:
+                continue
             for entry in schemas[resource][action].keys():
                 etype = None
                 if not 'type' in schemas[resource][action][entry]:
