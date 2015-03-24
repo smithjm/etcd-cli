@@ -2,6 +2,6 @@ pyyaml
 argparse
 ConfigParser
 logging
-etcd
+python-etcd
 jinja2
 simplejson

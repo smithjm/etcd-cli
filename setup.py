@@ -24,7 +24,7 @@ CLASSIFIERS = [
 
 setup(
     name             = 'etcd-cli',
-    version          = '0.1-9',
+    version          = '0.2',
 
     description      = 'etcd-cli CLI for Etcd based on schemas',
     long_description = open("README.rst").read(),
