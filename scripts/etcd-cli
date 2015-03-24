@@ -53,6 +53,7 @@ config = ConfigParser.ConfigParser()
 config.add_section('main')
 config.set('main', 'node', 'etcd')
 config.set('main', 'port', '4001')
+config.set('main', 'protocol', 'http')
 config.set('main', 'schemas', '/etc/etcd-cli/schemas')
 config.set('main', 'templates', '/etc/etcd-cli/templates')
 
@@ -212,7 +213,7 @@ if not args.yes:
             exit(1)
 
 # Connect to etcd
-c = etcd.Client(host=config.get('main', 'node'), protocol='http', port=config.getint('main', 'port'))
+c = etcd.Client(host=config.get('main', 'node'), protocol=config.get('main', 'protocol'), port=config.getint('main', 'port'))
 
 if args.action == 'list':
     for key in yaml_res[args.action]:
